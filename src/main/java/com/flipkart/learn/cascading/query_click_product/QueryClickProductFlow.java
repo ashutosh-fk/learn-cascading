@@ -11,7 +11,6 @@ import cascading.scheme.hadoop.TextDelimited;
 import cascading.tap.Tap;
 import cascading.tap.hadoop.GlobHfs;
 import cascading.tap.hadoop.Hfs;
-import cascading.tap.local.FileTap;
 import cascading.tuple.Fields;
 import com.flipkart.learn.cascading.commons.CascadingFlows;
 import com.flipkart.learn.cascading.product_attributes.operations.TransformFilter;
