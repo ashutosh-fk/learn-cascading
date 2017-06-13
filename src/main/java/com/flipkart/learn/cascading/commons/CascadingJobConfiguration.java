@@ -16,10 +16,16 @@ public class CascadingJobConfiguration {
     public static Properties getConfiguration(int numReducers) {
         Properties properties = new Properties();
         properties.setProperty("mapred.job.queue.name","search");
-        properties.setProperty("io.compression.codecs","org.apache.hadoop.io.compress.SnappyCodec,org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.DefaultCodec,org.apache.hadoop.io.compress.BZip2Codec");
+        properties.setProperty("io.compression.codecs","org.apache.hadoop.io.compress.SnappyCodec," +
+                "org.apache.hadoop.io.compress.GzipCodec," +
+                "org.apache.hadoop.io.compress.DefaultCodec,org.apache.hadoop.io.compress.BZip2Codec");
 
 //         loading action conf prepared by Oozie
+        properties.setProperty("mapreduce.job.reduces", "200");
+        properties.setProperty("mapred.min.split.size", "536870912");
+        properties.setProperty("mapred.max.split.size", "536870912");
         String actionXml = System.getProperty("oozie.action.conf.xml");
+
         if (actionXml == null) {
             return properties;
         }
@@ -36,10 +42,7 @@ public class CascadingJobConfiguration {
         if(numReducers == 0)
             numReducers = 250;
 
-        //Additional overides for our oozie cluster.
-        properties.setProperty("mapreduce.job.reduces", ""+numReducers);
-        properties.setProperty("'mapred.mapper.new-api", "true");
-
+        properties = new Properties();
         //Overriders if any.
         properties.setProperty("avro.mapred.ignore.inputs.without.extension", "false");
 
