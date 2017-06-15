@@ -1,6 +1,7 @@
 package com.flipkart.learn.cascading.commons;
 
 import com.flipkart.learn.cascading.assemblyjoins.AssembledJoinsFlow;
+import com.flipkart.learn.cascading.click_stream.ClickStreamFlow;
 import com.flipkart.learn.cascading.data_selection.DataSelectionFlow;
 import com.flipkart.learn.cascading.group_aggregation.GroupAggregatorFlow;
 import com.flipkart.learn.cascading.pass_through.PassThroughFlow;
@@ -17,6 +18,8 @@ public class CascadingFlowFactory {
 
     public static CascadingFlows getCascadingFlow(String flowName) {
         switch (flowName) {
+            case "clickStream":
+                return new ClickStreamFlow();
             case "queryClickProducts":
                 return new QueryClickProductFlow();
             case "productAttributes":

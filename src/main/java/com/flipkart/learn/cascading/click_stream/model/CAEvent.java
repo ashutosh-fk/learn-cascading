@@ -1,6 +1,7 @@
 package com.flipkart.learn.cascading.click_stream.model;
 
 import com.flipkart.learn.cascading.click_stream.ClickStreamFlow;
+import com.flipkart.learn.cascading.click_stream.utils.ClickStreamUtils;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NonNull;
@@ -18,7 +19,7 @@ import java.util.Map;
 public class CAEvent {
 
     @NonNull
-    @Getter @Setter
+    @Setter @Getter
     private String originalQuery;
 
     @NonNull
@@ -47,6 +48,10 @@ public class CAEvent {
 
     public String getTimestamp() {
         return ClickStreamFlow.format.format(this.timestamp);
+    }
+
+    public String getCanonicalQuery() {
+        return ClickStreamUtils.canonicaliseQuery(this.originalQuery);
     }
 
     @Data

@@ -8,7 +8,11 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import com.flipkart.learn.cascading.click_stream.ClickStreamFlow;
 import lombok.Data;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +24,9 @@ import java.util.Map;
 public class QueryClickAggregator extends BaseOperation<QueryClickAggregator.Context>
         implements Aggregator<QueryClickAggregator.Context> {
 
+    private static ObjectMapper mapper = new ObjectMapper();
+    private Logger logger = LoggerFactory.getLogger(QueryClickAggregator.class);
+
     public QueryClickAggregator(int numArgs, Fields fieldDeclaration) {
         // numArgs : Number of incoming fields that you will be sending (input field count)
         // fieldDeclaration:  The list of fields in the output.
@@ -30,13 +37,14 @@ public class QueryClickAggregator extends BaseOperation<QueryClickAggregator.Con
     @Override
     public void start(FlowProcess flowProcess, AggregatorCall<Context> aggregatorCall) {
         Context queryContext = new Context();
-        String query = aggregatorCall.getGroup().getString(ClickStreamFlow.query);
+        String query = aggregatorCall.getGroup().getString(ClickStreamFlow.canonicalQuery);
         queryContext.setQuery(query);
         aggregatorCall.setContext(queryContext);
     }
 
     @Override
     public void aggregate(FlowProcess flowProcess, AggregatorCall<Context> aggregatorCall) {
+        String candidateQuery = aggregatorCall.getArguments().getString(ClickStreamFlow.originalQuery);
         String clickProductId = aggregatorCall.getArguments().getString(ClickStreamFlow.clickedProductId);
         Integer clickProductPos = aggregatorCall.getArguments().getInteger(ClickStreamFlow.clickProductPosition);
 
@@ -50,6 +58,8 @@ public class QueryClickAggregator extends BaseOperation<QueryClickAggregator.Con
             return;
         }
 
+        context.getCandidateQueries().add(candidateQuery);
+
         // product clicked, query success
         context.setQuerySuccess(context.getQuerySuccess() + 1);
         if (productClickWeights.containsKey(clickProductId)) {
@@ -59,6 +69,7 @@ public class QueryClickAggregator extends BaseOperation<QueryClickAggregator.Con
             productClickWeights.put(clickProductId, (double)1);
         }
 
+        // store the click position
         if (productClickPositions.containsKey(clickProductId)) {
             List<Integer> clickPos = productClickPositions.get(clickProductId);
             clickPos.add(clickProductPos);
@@ -80,7 +91,7 @@ public class QueryClickAggregator extends BaseOperation<QueryClickAggregator.Con
             ProductClick productClick = new ProductClick();
             productClick.setProductId(entry.getKey());
             productClick.setWeight(entry.getValue());
-            productClick.setClickPostions(productClickPos.get(entry.getKey()));
+            productClick.setClickPositions(productClickPos.get(entry.getKey()));
             productClicks.add(productClick);
         }
 
@@ -88,17 +99,29 @@ public class QueryClickAggregator extends BaseOperation<QueryClickAggregator.Con
                 (aggregatorCall.getContext().getQuerySuccess()
                         + aggregatorCall.getContext().getQueryFailure() + 100d);
 
-        Tuple tuple = new Tuple();
-        tuple.add(aggregatorCall.getContext().getQuery());
-        tuple.add(querySuccess);
-        tuple.add(productClicks.toString());
-        aggregatorCall.getOutputCollector().add(tuple);
+        // no clicked products found for the query, will return
+        if (productClicks.isEmpty()) {
+            return;
+        }
+
+        try {
+            Tuple tuple = new Tuple();
+            tuple.add(aggregatorCall.getContext().getQuery());
+            tuple.add(mapper.writeValueAsString(aggregatorCall.getContext().getCandidateQueries()));
+            tuple.add(querySuccess);
+            tuple.add(mapper.writeValueAsString(productClicks));
+            aggregatorCall.getOutputCollector().add(tuple);
+
+        } catch (IOException e) {
+            logger.error("Error deserialising the productClicks array for the query :: "
+                    + e.getMessage());
+        }
     }
 
     @Data
     public static class Context {
-
         private String query;
+        private List<String> candidateQueries = new ArrayList<>();
         private Integer querySuccess = 0;
         private Integer queryFailure = 0;
         private Map<String, Double> productClickWeights = new HashMap<>();
@@ -109,7 +132,7 @@ public class QueryClickAggregator extends BaseOperation<QueryClickAggregator.Con
     public static class ProductClick {
         private String productId;
         private Double weight;
-        private List<Integer> clickPostions;
+        private List<Integer> clickPositions;
     }
 
 }

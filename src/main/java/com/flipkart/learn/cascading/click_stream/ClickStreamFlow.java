@@ -14,6 +14,9 @@ import com.flipkart.learn.cascading.click_stream.operations.ClickStreamOperation
 import com.flipkart.learn.cascading.commons.CascadingFlows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tartarus.snowball.SnowballProgram;
+import org.tartarus.snowball.SnowballStemmer;
+import org.tartarus.snowball.ext.porterStemmer;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -31,7 +34,9 @@ public class ClickStreamFlow implements CascadingFlows {
 
     public static final Fields CaEventJson = new Fields("caEventJson");
 
-    public static final Fields query = new Fields("query");
+    public static final Fields canonicalQuery = new Fields("canonical_query");
+    public static final Fields originalQuery = new Fields("original_query");
+    public static final Fields candidateQueries = new Fields("candidate_queries");
     public static final Fields queryDate = new Fields("query_date");
     public static final Fields clickedProductId = new Fields("clicked_product_id");
     public static final Fields clickProductPosition = new Fields("clicked_product_position");
@@ -99,18 +104,22 @@ public class ClickStreamFlow implements CascadingFlows {
         for (GlobHfs tap : caEventTaps) {
             Pipe eventProcessPipe = new Pipe("pipe::" + tap.getIdentifier());
             eventProcessPipe = new Each(eventProcessPipe, Fields.ALL,
-                    new ClickStreamOperation(1, Fields.join(query, queryDate,
-                            clickedProductId, clickProductPosition)), Fields.RESULTS);
+                    new ClickStreamOperation(1,
+                            Fields.join(canonicalQuery, originalQuery, queryDate,
+                                    clickedProductId, clickProductPosition)),
+                    Fields.RESULTS);
+
             eventProcessPipes.add(eventProcessPipe);
         }
 
         Pipe[] eventProcessPipeArr = eventProcessPipes.toArray(new Pipe[0]);
         Pipe eventProcessMergedPipe = new Merge("eventMergedPipe", eventProcessPipeArr);
-        Pipe eventQueryGroupPipe = new GroupBy(eventProcessMergedPipe, query);
+        Pipe eventQueryGroupPipe = new GroupBy(eventProcessMergedPipe, canonicalQuery);
 
         eventQueryGroupPipe = new Every(eventQueryGroupPipe, Fields.ALL,
-                new QueryClickAggregator(4,
-                        Fields.join(query, querySuccess, productClickJson)),
+                new QueryClickAggregator(5,
+                        Fields.join(canonicalQuery, candidateQueries,
+                                querySuccess, productClickJson)),
                 Fields.RESULTS);
 
         FlowDef flowDefinition = FlowDef.flowDef().setName(flowName);

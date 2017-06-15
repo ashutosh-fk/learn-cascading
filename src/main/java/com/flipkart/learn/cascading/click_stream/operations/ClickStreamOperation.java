@@ -69,6 +69,7 @@ public class ClickStreamOperation extends BaseOperation implements Function, Ser
                 || caEvent.getFdpProductClickObject().getFdpProductClickList().isEmpty()) {
 
             Tuple tuple = new Tuple();
+            tuple.add(caEvent.getCanonicalQuery().toLowerCase().trim());
             tuple.add(caEvent.getOriginalQuery().toLowerCase());
             tuple.add(caEvent.getTimestamp());
             tuple.add("nil");
@@ -80,6 +81,7 @@ public class ClickStreamOperation extends BaseOperation implements Function, Ser
         for (CAEvent.ProductClick productClick : caEvent.getFdpProductClickObject()
                 .getFdpProductClickList()) {
             Tuple tuple = new Tuple();
+            tuple.add(caEvent.getCanonicalQuery().toLowerCase().trim());
             tuple.add(caEvent.getOriginalQuery().toLowerCase());
             tuple.add(caEvent.getTimestamp());
             tuple.add(productClick.getProductId());
