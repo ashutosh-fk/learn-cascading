@@ -13,10 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by subhadeep.m on 14/06/17.
@@ -121,7 +118,7 @@ public class QueryClickAggregator extends BaseOperation<QueryClickAggregator.Con
     @Data
     public static class Context {
         private String query;
-        private List<String> candidateQueries = new ArrayList<>();
+        private Set<String> candidateQueries = new HashSet<>();
         private Integer querySuccess = 0;
         private Integer queryFailure = 0;
         private Map<String, Double> productClickWeights = new HashMap<>();
