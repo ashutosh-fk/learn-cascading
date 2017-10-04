@@ -14,9 +14,6 @@ import com.flipkart.learn.cascading.click_stream.operations.ClickStreamOperation
 import com.flipkart.learn.cascading.commons.CascadingFlows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.tartarus.snowball.SnowballProgram;
-import org.tartarus.snowball.SnowballStemmer;
-import org.tartarus.snowball.ext.porterStemmer;
 
 import java.text.DateFormat;
 import java.text.ParseException;

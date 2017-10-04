@@ -22,8 +22,11 @@ public class CascadingJobConfiguration {
 
 //         loading action conf prepared by Oozie
         properties.setProperty("mapreduce.job.reduces", "200");
-        properties.setProperty("mapred.min.split.size", "536870912");
-        properties.setProperty("mapred.max.split.size", "536870912");
+        //properties.setProperty("mapred.min.split.size", "536870912");
+        //properties.setProperty("mapred.max.split.size", "536870912");
+        //properties.setProperty("mapreduce.map.java.opts", "-Xmx2048M");
+        properties.setProperty("mapreduce.reduce.java.opts", "-Xmx2048M");
+        //properties.setProperty("io.sort.mb", "128");
         String actionXml = System.getProperty("oozie.action.conf.xml");
 
         if (actionXml == null) {

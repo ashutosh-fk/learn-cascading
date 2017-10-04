@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 public class ClickStreamUtils {
 
     //public static final SnowballStemmer stemmer = new porterStemmer();
-    public static final Pattern nonAlnumPattern = Pattern.compile("[^a-zA-Z0-9]+");
+    public static final Pattern nonAlnumPattern = Pattern.compile("[^a-zA-Z0-9.%']+");
 
     public static String canonicaliseQuery(String query) {
         String[] queryTokens = query.split(nonAlnumPattern.pattern());
@@ -24,6 +24,4 @@ public class ClickStreamUtils {
         //}
         return String.join(" ", queryTokens);
     }
-
-
 }

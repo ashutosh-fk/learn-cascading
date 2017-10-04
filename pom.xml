@@ -116,6 +116,13 @@
       <scope>test</scope>
     </dependency>
 
+
+    <dependency>
+      <groupId>org.nd4j</groupId>
+      <artifactId>nd4j-native-platform</artifactId>
+      <version>0.8.0</version>
+    </dependency>
+
    <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
     <dependency>
       <groupId>com.google.guava</groupId>

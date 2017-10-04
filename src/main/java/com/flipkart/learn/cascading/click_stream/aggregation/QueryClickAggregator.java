@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.*;
 
 /**
@@ -43,19 +44,44 @@ public class QueryClickAggregator extends BaseOperation<QueryClickAggregator.Con
     public void aggregate(FlowProcess flowProcess, AggregatorCall<Context> aggregatorCall) {
         String candidateQuery = aggregatorCall.getArguments().getString(ClickStreamFlow.originalQuery);
         String clickProductId = aggregatorCall.getArguments().getString(ClickStreamFlow.clickedProductId);
-        Integer clickProductPos = aggregatorCall.getArguments().getInteger(ClickStreamFlow.clickProductPosition);
+        String queryDateString = aggregatorCall.getArguments().getString(ClickStreamFlow.queryDate);
+        Date queryDate;
+        try {
+            queryDate = ClickStreamFlow.format.parse(queryDateString);
 
+        } catch (ParseException e) {
+            logger.error("Error parsing the date string, will skip the tuple", e);
+            return;
+        }
+
+        Integer clickProductPos = aggregatorCall.getArguments().getInteger(ClickStreamFlow.clickProductPosition);
         Context context = aggregatorCall.getContext();
         Map<String, Double> productClickWeights = context.getProductClickWeights();
         Map<String, List<Integer>> productClickPositions = context.getProductClickPositions();
+        Map<String, TreeMap<Date, Double>> productClickWeightByDay = context.getProductClickWeightsByDay();
 
         // no product clicks found
         if (clickProductId.equals("nil") && clickProductPos == -1) {
             context.setQueryFailure(context.getQueryFailure() + 1);
             return;
         }
-
         context.getCandidateQueries().add(candidateQuery);
+
+        if (!productClickWeightByDay.containsKey(clickProductId)) {
+            TreeMap<Date, Double> productweightByDay = new TreeMap<>();
+            productClickWeightByDay.put(clickProductId, productweightByDay);
+            productweightByDay.put(queryDate, (double)1);
+        }
+        else {
+            Map<Date, Double> productWeightByDay = productClickWeightByDay.get(clickProductId);
+            if (productWeightByDay.containsKey(queryDate)) {
+                productWeightByDay.put(queryDate, productWeightByDay.get(queryDate) + 1);
+            }
+            else {
+                productWeightByDay.put(queryDate, (double)1);
+            }
+
+        }
 
         // product clicked, query success
         context.setQuerySuccess(context.getQuerySuccess() + 1);
@@ -82,6 +108,9 @@ public class QueryClickAggregator extends BaseOperation<QueryClickAggregator.Con
     public void complete(FlowProcess flowProcess, AggregatorCall<Context> aggregatorCall) {
         Map<String, Double> productClickWeights = aggregatorCall.getContext().getProductClickWeights();
         Map<String, List<Integer>> productClickPos = aggregatorCall.getContext().getProductClickPositions();
+        Map<String, TreeMap<Date, Double>> productWeightsByDay = aggregatorCall.getContext()
+                .getProductClickWeightsByDay();
+
         List<ProductClick> productClicks = new ArrayList<>();
 
         for (Map.Entry<String, Double> entry : productClickWeights.entrySet()) {
@@ -89,6 +118,7 @@ public class QueryClickAggregator extends BaseOperation<QueryClickAggregator.Con
             productClick.setProductId(entry.getKey());
             productClick.setWeight(entry.getValue());
             productClick.setClickPositions(productClickPos.get(entry.getKey()));
+            productClick.setClicksByDate(productWeightsByDay.get(entry.getKey()));
             productClicks.add(productClick);
         }
 
@@ -122,6 +152,7 @@ public class QueryClickAggregator extends BaseOperation<QueryClickAggregator.Con
         private Integer querySuccess = 0;
         private Integer queryFailure = 0;
         private Map<String, Double> productClickWeights = new HashMap<>();
+        private Map<String, TreeMap<Date, Double>> productClickWeightsByDay = new HashMap<>();
         private Map<String, List<Integer>> productClickPositions = new HashMap<>();
     }
 
@@ -130,6 +161,7 @@ public class QueryClickAggregator extends BaseOperation<QueryClickAggregator.Con
         private String productId;
         private Double weight;
         private List<Integer> clickPositions;
+        private TreeMap<Date, Double> clicksByDate;
     }
 
 }

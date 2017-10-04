@@ -13,6 +13,7 @@ public class ProductAttributes {
 
     public enum IllegalFields {
         category_path ("category_path"),
+        primary_path("primary_path"),
         leafPaths ("leafPaths"),
         title ("title"),
         vertical ("vertical");
@@ -30,6 +31,16 @@ public class ProductAttributes {
 
     @Setter @NonNull
     private Map<String, List<String>> attributesMap;
+
+
+    public Optional<List<String>> getLeafPaths() {
+
+        if (!this.attributesMap.containsKey("leafPaths") || this.attributesMap.get("leafPaths").isEmpty()) {
+            return Optional.absent();
+        }
+
+        return Optional.of(this.attributesMap.get("leafPaths"));
+    }
 
 
     public Optional<List<ProductPathAttribute>> getProductPathAttributes() {
